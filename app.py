@@ -158,17 +158,17 @@ class TaskApp(Tk):
         # Mood buttons
         self.mood_var = StringVar(value="neutral")
         
-        productive_btn = Radiobutton(mood_btn_frame, text="Productive :D", 
+        productive_btn = Radiobutton(mood_btn_frame, text="Productive 😀", 
                                    variable=self.mood_var, value="productive",
                                    command=self.update_mood, bg='#f0f8ff')
         productive_btn.pack(side="left", padx=10)
         
-        neutral_btn = Radiobutton(mood_btn_frame, text="Neutral :|", 
+        neutral_btn = Radiobutton(mood_btn_frame, text="Neutral 😐", 
                                 variable=self.mood_var, value="neutral",
                                 command=self.update_mood, bg='#f0f8ff')
         neutral_btn.pack(side="left", padx=10)
         
-        lazy_btn = Radiobutton(mood_btn_frame, text="Lazy :<", 
+        lazy_btn = Radiobutton(mood_btn_frame, text="Lazy 😓", 
                              variable=self.mood_var, value="lazy",
                              command=self.update_mood, bg='#f0f8ff')
         lazy_btn.pack(side="left", padx=10)
