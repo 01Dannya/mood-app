@@ -107,13 +107,16 @@ from taskList import TaskList
 
 class TaskApp(Tk):
 
+
+
     def __init__(self):
         super().__init__() #initialize window
         self.title("Mood - Task Manager") #sets title to mood
         self.geometry("520x450")  #sets size
+    
+
 
         
-
         # Mood settings for organization
         self.moods = {
             "productive": {
@@ -175,6 +178,69 @@ class TaskApp(Tk):
                                font=('Arial', 10, 'italic'), bg='#f0f8ff', wraplength=400)
         self.mood_label.pack(pady=5)
 
+        # timer:
+        self.timer_running = False
+        self.is_work_time = True
+        self.time_remaining = 25 * 60  
+        self.work_duration = 25 * 60   
+        self.break_duration = 5 * 60   
+
+        timer_frame = Frame(self, bg='#e8f4fd', relief='raised', bd=2)
+        timer_frame.pack(fill="x", padx=10, pady=10)
+
+        Label(timer_frame, text="⏰ Focus Timer", 
+              font=('Arial', 14, 'bold'), bg='#e8f4fd').pack(pady=5)
+
+        # Timer display
+        self.timer_label = Label(timer_frame, text="25:00", 
+                                font=('Arial', 24, 'bold'), bg='#e8f4fd', fg='#2c3e50')
+        self.timer_label.pack(pady=5)
+
+        # Timer controls frame
+        timer_controls = Frame(timer_frame, bg='#e8f4fd')
+        timer_controls.pack(pady=5)
+
+        self.timer_btn = Button(timer_controls, text="Start Focus", 
+                               command=self.toggle_timer, bg='#27ae60', fg='black',
+                               font=('Arial', 10, 'bold'))
+        self.timer_btn.pack(side="left", padx=5)
+
+        Button(timer_controls, text="Reset", 
+               command=self.reset_timer, bg='#95a5a6', fg='black').pack(side="left", padx=5)
+
+        
+        time_settings = Frame(timer_frame, bg='#e8f4fd')
+        time_settings.pack(pady=10)
+
+        
+        work_frame = Frame(time_settings, bg='#e8f4fd')
+        work_frame.pack(side="left", padx=20)
+        Label(work_frame, text="Work Time (min):", bg='#e8f4fd').pack()
+        self.work_var = StringVar(value="25")
+        Spinbox(work_frame, from_=5, to=120, increment=5, width=5,
+                textvariable=self.work_var, command=self.update_work_time).pack()
+
+        # Break time setting  
+        break_frame = Frame(time_settings, bg='#e8f4fd')
+        break_frame.pack(side="left", padx=20)
+        Label(break_frame, text="Break Time (min):", bg='#e8f4fd').pack()
+        self.break_var = StringVar(value="5")
+        Spinbox(break_frame, from_=1, to=30, increment=1, width=5,
+                textvariable=self.break_var, command=self.update_break_time).pack()
+
+        # Timer mode indicator
+        self.mode_label = Label(timer_frame, text="Focus Time 🎯", 
+                               font=('Arial', 10, 'bold'), bg='#e8f4fd', fg='#27ae60')
+        self.mode_label.pack(pady=5)
+        # ======= TIMER SECTION ======= (ADD ENDING HERE)
+
+        # -------input area (top)---------- (YOUR EXISTING CODE CONTINUES)
+        top = Frame(self)
+
+
+
+
+
         # -------input area (top)----------
 
         top = Frame(self) #creates frame widget
@@ -225,16 +291,20 @@ class TaskApp(Tk):
         btns.pack(fill="x", padx=10, pady=5)
         #place buttons frame below top frame, stretches horizontally
 
-        Button(btns, text = "Add Task", command = self.add_task, bg='#4CAF50', fg='white').pack(side = "left", padx=5)
+        Button(btns, text = "Add Task", command = self.add_task, bg='#4CAF50', fg='black').pack(side = "left", padx=5)
         #creates a button labeled "Add"
         #when clicked, self.add_task called
         #placed on left side of buttons frame
 
-        Button(btns, text = "Delete Selected", command = self.delete_selected, bg='#f44336', fg='white').pack(side = "left", padx=5)
+        Button(btns, text = "Delete Selected", command = self.delete_selected, bg='#f44336', fg='black').pack(side = "left", padx=5)
         #delete button
 
         Button(btns, text="Organize by Mood", command=self.organize_by_mood,
-               bg='#2196F3', fg='white').pack(side="left", padx=5)
+               bg='#2196F3', fg='black').pack(side="left", padx=5)
+        
+
+        Button(btns, text="Start Timer", command=self.toggle_timer,
+       bg='#9b59b6', fg='black').pack(side="left", padx=5)
 
         # --------task list---------------
 
@@ -328,6 +398,106 @@ class TaskApp(Tk):
     def update_counter(self):
         count = len(self.tasks.taskList)
         self.task_count.config(text=f"{count} task{'s' if count != 1 else ''}")
+    
+
+    def toggle_timer(self):
+        """Start or pause the timer"""
+        if not self.timer_running:
+            self.start_timer()
+        else:
+            self.pause_timer()
+
+    def start_timer(self):
+        """Start the timer"""
+        self.timer_running = True
+        self.timer_btn.config(text="Pause", bg='#e74c3c')
+        self.update_timer()
+
+    def pause_timer(self):
+        """Pause the timer"""
+        self.timer_running = False
+        self.timer_btn.config(text="Resume", bg='#3498db')
+
+    def reset_timer(self):
+        """Reset timer to current duration"""
+        self.timer_running = False
+        if self.is_work_time:
+            self.time_remaining = self.work_duration
+            self.mode_label.config(text="Focus Time 🎯", fg='#27ae60')
+        else:
+            self.time_remaining = self.break_duration  
+            self.mode_label.config(text="Break Time ☕", fg='#e67e22')
+        
+        self.timer_btn.config(text="Start Focus", bg='#27ae60')
+        self.update_timer_display()
+
+    def update_timer(self):
+        """Update timer countdown"""
+        if self.timer_running:
+            if self.time_remaining > 0:
+                self.time_remaining -= 1
+                self.update_timer_display()
+                self.after(1000, self.update_timer)  # Schedule next update in 1 second
+            else:
+                self.timer_complete()
+
+    def update_timer_display(self):
+        """Update the timer display label"""
+        minutes = self.time_remaining // 60
+        seconds = self.time_remaining % 60
+        self.timer_label.config(text=f"{minutes:02d}:{seconds:02d}")
+
+    def timer_complete(self):
+        """Handle timer completion"""
+        self.timer_running = False
+        
+        if self.is_work_time:
+            # switch to break time
+            self.is_work_time = False
+            self.time_remaining = self.break_duration
+            self.mode_label.config(text="Break Time ☕", fg='#e67e22')
+            self.show_timer_alert("🎉 Focus Session Complete!", 
+                                "Time for a break!\n\nTake a moment to:\n• Stretch\n• Drink water\n• Rest your eyes")
+        else:
+            # Switch to work time  
+            self.is_work_time = True
+            self.time_remaining = self.work_duration
+            self.mode_label.config(text="Focus Time 🎯", fg='#27ae60')
+            self.show_timer_alert("⏰ Break Time Over!", 
+                                "Ready to focus again?\n\nLet's get back to work!")
+        
+        self.timer_btn.config(text="Start Focus", bg='#27ae60')
+        self.update_timer_display()
+
+    def show_timer_alert(self, title, message):
+        """Show alert when timer completes"""
+        alert_win = Toplevel(self)
+        alert_win.title(title)
+        alert_win.geometry("300x200")
+        alert_win.attributes('-topmost', True)
+        
+        Label(alert_win, text=title, font=('Arial', 14, 'bold')).pack(pady=20)
+        Label(alert_win, text=message, font=('Arial', 11), justify='left').pack(pady=10)
+        
+        Button(alert_win, text="OK", command=alert_win.destroy,
+            bg='#3498db', fg='black', font=('Arial', 11)).pack(pady=10)
+
+    def update_work_time(self):
+        """Update work duration"""
+        self.work_duration = int(self.work_var.get()) * 60
+        if self.is_work_time and not self.timer_running:
+            self.time_remaining = self.work_duration
+            self.update_timer_display()
+
+    def update_break_time(self):
+        """Update break duration"""  
+        self.break_duration = int(self.break_var.get()) * 60
+        if not self.is_work_time and not self.timer_running:
+            self.time_remaining = self.break_duration
+            self.update_timer_display()
+
+
+
 
 if __name__ == "__main__":
     app = TaskApp()
